@@ -77,7 +77,9 @@ sys_read(void)
   if(argfd(0, 0, &f) < 0)
     return -1;
 
-  if(!f->readable)
+  // Permission checks: file exists and does not 
+  // have read permissions
+  if(f->ip && !(f->ip->mode & S_IRUSR))
     return -1;
 
   return fileread(f, p, n);
@@ -95,7 +97,9 @@ sys_write(void)
   if(argfd(0, 0, &f) < 0)
     return -1;
 
-  if(!f->writable)
+  // Permission checks: file exists and does not 
+  // have write permissions
+  if(f->ip && !(f->ip->mode & S_IWUSR))
     return -1;
 
   return filewrite(f, p, n);
@@ -297,6 +301,8 @@ create(char *path, short type, short major, short minor)
 
   iunlockput(dp);
 
+  ip->mode = S_IRUSR | S_IWUSR;  // Default to read and write for owner
+
   return ip;
 
  fail:
@@ -347,6 +353,17 @@ sys_open(void)
     end_op();
     return -1;
   }
+  // Requested read but file lacks read permission
+  if((omode & O_RDONLY) && !(ip->mode & S_IRUSR)){
+    iunlockput(ip);
+    return -1;
+  }
+
+  // Requested write but file lacks write permission
+  if((omode & O_WRONLY) && !(ip->mode & S_IWUSR)){
+    iunlockput(ip);
+    return -1;
+  }
 
   if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
     if(f)
@@ -366,7 +383,6 @@ sys_open(void)
   f->ip = ip;
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
-  f->executable = (omode & O_EXEC);
 
   if((omode & O_TRUNC) && ip->type == T_FILE){
     itrunc(ip);

@@ -36,6 +36,7 @@ struct dinode {
   short nlink;          // Number of links to inode in file system
   uint size;            // Size of file (bytes)
   uint addrs[NDIRECT+1];   // Data block addresses
+  ushort mode;          // Permission mode
 };
 
 // Inodes per block.
@@ -58,3 +59,7 @@ struct dirent {
   char name[DIRSIZ];
 };
 
+// Define permission bits
+#define S_IRUSR 0400  // Read permission for owner
+#define S_IWUSR 0200  // Write permission for owner
+#define S_IXUSR 0100  // Execute permission for owner
