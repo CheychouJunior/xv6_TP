@@ -142,6 +142,7 @@ UPROGS=\
 	$U/_freememtest\
 	$U/_lseektest\
 	$U/_touch\
+	$U/_chmod\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

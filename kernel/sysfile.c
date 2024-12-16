@@ -570,3 +570,31 @@ sys_lseek(void)
   }
   return f->off;
 }
+
+uint64
+sys_chmod(void)
+{
+  char path[MAXPATH];
+  int mode;
+  struct inode *ip;
+
+  argint(1, &mode);
+  if(argstr(0, path, MAXPATH) < 0 )
+    return -1;
+
+  begin_op();
+  ip = namei(path);
+  if(ip == 0){
+    end_op();
+    return -1;
+  }
+
+  // update inode permissions
+  ilock(ip);
+  ip->mode = mode;
+  iupdate(ip);
+  iunlock(ip);
+  end_op();
+
+  return 0;
+}

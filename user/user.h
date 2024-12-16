@@ -24,6 +24,7 @@ int sleep(int);
 int uptime(void);
 uint64 freemem(void);
 int lseek(int fd, int offset, int whence);
+int chmod(const char *path, int mode);
 
 // ulib.c
 int stat(const char*, struct stat*);
