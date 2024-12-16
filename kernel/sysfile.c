@@ -80,7 +80,11 @@ sys_read(void)
   // Permission checks: file exists and does not 
   // have read permissions
   if(f->ip && !(f->ip->mode & S_IRUSR))
-    return -1;
+    if(f->ip->type != T_DIR) 
+        return -1;
+    
+  
+    
 
   return fileread(f, p, n);
 }
@@ -100,7 +104,8 @@ sys_write(void)
   // Permission checks: file exists and does not 
   // have write permissions
   if(f->ip && !(f->ip->mode & S_IWUSR))
-    return -1;
+    if(f->ip->type != T_DIR)
+      return -1;
 
   return filewrite(f, p, n);
 }
@@ -355,14 +360,18 @@ sys_open(void)
   }
   // Requested read but file lacks read permission
   if((omode & O_RDONLY) && !(ip->mode & S_IRUSR)){
-    iunlockput(ip);
-    return -1;
+    if(ip->type != T_DIR){
+      iunlockput(ip);
+      return -1;
+    }
   }
 
   // Requested write but file lacks write permission
   if((omode & O_WRONLY) && !(ip->mode & S_IWUSR)){
-    iunlockput(ip);
-    return -1;
+    if(ip->type != T_DIR){
+      iunlockput(ip);
+      return -1;
+    }
   }
 
   if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){

@@ -7,3 +7,8 @@
 #define SEEK_SET 0 // from beginning of file
 #define SEEK_CUR 1 // from current position
 #define SEEK_END 2 // from end of file
+
+// Define permission bits
+#define S_IRUSR 0400  // Read permission for owner
+#define S_IWUSR 0200  // Write permission for owner
+#define S_IXUSR 0100  // Execute permission for owner

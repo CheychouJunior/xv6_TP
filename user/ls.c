@@ -30,7 +30,7 @@ ls(char *path)
   int fd;
   struct dirent de;
   struct stat st;
-
+  //printf("je suis la");
   if((fd = open(path, O_RDONLY)) < 0){
     fprintf(2, "ls: cannot open %s\n", path);
     return;
