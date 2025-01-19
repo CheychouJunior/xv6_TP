@@ -98,3 +98,34 @@ sys_freemem(void)
 {
   return kalloc_free_memory();
 }
+
+
+uint64
+sys_mutex_create(void)
+{
+  return mutex_create();
+}
+
+uint64
+sys_mutex_lock(void)
+{
+  int mutex_id;
+  argint(0, &mutex_id);
+  return mutex_lock(mutex_id);
+}
+
+uint64
+sys_mutex_unlock(void)
+{
+  int mutex_id;
+  argint(0, &mutex_id);
+  return mutex_unlock(mutex_id);
+}
+
+uint64
+sys_mutex_free(void)
+{
+  int mutex_id;
+  argint(0, &mutex_id);
+  return mutex_free(mutex_id);
+}

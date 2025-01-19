@@ -25,6 +25,10 @@ int uptime(void);
 uint64 freemem(void);
 int lseek(int fd, int offset, int whence);
 int chmod(const char *path, int mode);
+int mutex_create(void);
+int mutex_lock(int);
+int mutex_unlock(int);
+int mutex_free(int);
 
 // ulib.c
 int stat(const char*, struct stat*);
