@@ -143,6 +143,7 @@ UPROGS=\
 	$U/_lseektest\
 	$U/_touch\
 	$U/_chmod\
+	$U/_ui\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
