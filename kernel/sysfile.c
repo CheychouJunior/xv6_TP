@@ -579,13 +579,17 @@ sys_chmod(void)
   struct inode *ip;
 
   argint(1, &mode);
-  if(argstr(0, path, MAXPATH) < 0 )
+  if(argstr(0, path, MAXPATH) < 0 ){
+    printf("C'est dans le premier que ca ndem");
     return -1;
+  }
+    
 
   begin_op();
   ip = namei(path);
   if(ip == 0){
     end_op();
+    printf("Donc c'est alors dans le deuxieme que ca ndem");
     return -1;
   }
 
