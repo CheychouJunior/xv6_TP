@@ -144,6 +144,7 @@ UPROGS=\
 	$U/_lseektest\
 	$U/_touch\
 	$U/_chmod\
+	$U/_ui\
 	$U/_mutextest\
 
 fs.img: mkfs/mkfs README $(UPROGS)

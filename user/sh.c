@@ -142,6 +142,25 @@ getcmd(char *buf, int nbuf)
   return 0;
 }
 
+// command to check if a file is a script
+int is_script(char *filename) {
+  int fd;
+  char buf[2];
+  
+  fd = open(filename, O_RDONLY);
+  if(fd < 0)
+    return 0;
+    
+  // Read first two bytes to check for #!
+  if(read(fd, buf, 2) != 2) {
+    close(fd);
+    return 0;
+  }
+  
+  close(fd);
+  return (buf[0] == '#' && buf[1] == '!');
+}
+
 int
 main(void)
 {
