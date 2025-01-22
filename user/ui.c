@@ -9,6 +9,8 @@
 #define MAXCONTENT 1024
 #define HISTORY_SIZE 10
 #define TRASH_PATH "/.trash"
+#define CLEAR_SCREEN "\033[2J"    // Code ANSI pour effacer l'écran
+#define CURSOR_HOME "\033[H"      // Code ANSI pour replacer le curseur en haut à gauche
 
 char back_history[HISTORY_SIZE][MAXPATH];
 char forward_history[HISTORY_SIZE][MAXPATH];
@@ -47,7 +49,8 @@ struct archive_header {
 
 // Fonctions utilitaires
 void clear_screen() {
-    printf("\n\n\n\n");
+    write(1, CLEAR_SCREEN, sizeof(CLEAR_SCREEN) - 1);
+    write(1, CURSOR_HOME, sizeof(CURSOR_HOME) - 1);
 }
 
 void append_path(char *dest, char *src) {
