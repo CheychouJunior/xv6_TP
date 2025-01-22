@@ -43,3 +43,4 @@ entry("mutex_create");
 entry("mutex_lock");
 entry("mutex_unlock");
 entry("mutex_free");
+entry("getprocs");

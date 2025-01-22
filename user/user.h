@@ -1,4 +1,5 @@
 struct stat;
+struct proc_info;
 
 // system calls
 int fork(void);
@@ -29,6 +30,7 @@ int mutex_create(void);
 int mutex_lock(int);
 int mutex_unlock(int);
 int mutex_free(int);
+int getprocs(struct proc_info*);
 
 // ulib.c
 int stat(const char*, struct stat*);

@@ -27,3 +27,4 @@
 #define SYS_mutex_lock    26
 #define SYS_mutex_unlock  27
 #define SYS_mutex_free    28
+#define SYS_getprocs    29

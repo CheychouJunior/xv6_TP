@@ -146,6 +146,7 @@ UPROGS=\
 	$U/_chmod\
 	$U/_ui\
 	$U/_mutextest\
+	$U/_ps\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
