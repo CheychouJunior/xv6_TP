@@ -845,7 +845,8 @@ void print_files_menu() {
     print_menu_item(5, "🗑️  Supprimer un fichier");
     print_menu_item(6, "🗑️  Supprimer un répertoire");
     print_menu_item(7, "🔍 Rechercher un fichier");
-    print_menu_item(8, "🏠 Retour au menu principal");
+    print_menu_item(8, "🗺️ Afficher le contenu d'un fichier");
+    print_menu_item(9, "🏠 Retour au menu principal");
     print_menu_footer();
     printf("\nChoix: ");
 }
