@@ -86,7 +86,22 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit(1);
+    
+    // Try executing the command as is
     exec(ecmd->argv[0], ecmd->argv);
+    
+    // If execution fails, try with '/' prepended
+    if(ecmd->argv[0][0] != '/'){
+      char path[128];
+      path[0] = '/';  // Start with '/'
+      int len = strlen(ecmd->argv[0]);
+      memmove(path + 1, ecmd->argv[0], len);
+      path[len + 1] = '\0';  // Null-terminate the string
+
+      exec(path, ecmd->argv);
+    }
+
+    // If both attempts fail, print error and exit
     fprintf(2, "exec %s failed\n", ecmd->argv[0]);
     break;
 
