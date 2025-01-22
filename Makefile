@@ -150,6 +150,7 @@ UPROGS=\
 	$U/_clear\
 	$U/_pwd\
 	$U/_pwdtest\
+	$U/_cp\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
