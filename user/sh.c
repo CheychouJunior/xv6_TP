@@ -10,6 +10,7 @@
 #define PIPE  3
 #define LIST  4
 #define BACK  5
+#define BUILTIN 6
 
 #define MAXARGS 10
 
@@ -49,10 +50,16 @@ struct backcmd {
   struct cmd *cmd;
 };
 
+struct builtin_cmd {
+  int type;           // BUILTIN
+  char *argv[MAXARGS];
+};
+
 int fork1(void);  // Fork but panics on failure.
 void panic(char*);
 struct cmd *parsecmd(char*);
 void runcmd(struct cmd*) __attribute__((noreturn));
+int builtin_cmd(struct cmd *cmd);
 
 // Execute cmd.  Never returns.
 void
@@ -67,6 +74,9 @@ runcmd(struct cmd *cmd)
 
   if(cmd == 0)
     exit(1);
+  
+  if(builtin_cmd(cmd))
+    exit(0);
 
   switch(cmd->type){
   default:
@@ -276,6 +286,28 @@ backcmd(struct cmd *subcmd)
   cmd->cmd = subcmd;
   return (struct cmd*)cmd;
 }
+
+int
+builtin_cmd(struct cmd *cmd)
+{
+  if (cmd->type != BUILTIN) {
+      return 0;  // Not a built-in command
+    }
+
+    struct builtin_cmd *bcmd = (struct builtin_cmd*)cmd;
+    
+    if (strcmp(bcmd->argv[0], "cd") == 0) {
+      if (bcmd->argv[1] == 0) {
+        fprintf(2, "cd: missing argument\n");
+      } else {
+        if (chdir(bcmd->argv[1]) < 0) {
+          fprintf(2, "cd: cannot cd to %s\n", bcmd->argv[1]);
+        }
+      }
+      return 1;  // Command handled
+    }
+    return 0;  // Not a built-in command
+}
 //PAGEBREAK!
 // Parsing
 
@@ -358,6 +390,28 @@ parsecmd(char *s)
     panic("syntax");
   }
   nulterminate(cmd);
+
+  // Check if the command is 'cd'
+  if (memcmp(s, "cd ", 3) == 0 || strcmp(s, "cd") == 0) {
+    struct builtin_cmd *bcmd = malloc(sizeof(*bcmd));
+    bcmd->type = BUILTIN;
+
+    // Parse the arguments manually
+    int argc = 0;
+    char *token = s;
+
+    while ((token = strchr(token, ' ')) != 0 && argc < MAXARGS - 1) {
+      *token = '\0';          // Null-terminate the argument
+      bcmd->argv[argc++] = s;  // Store the argument
+      token++;
+      s = token;
+    }
+    bcmd->argv[argc] = 0;  // Null-terminate the argument list
+
+    return (struct cmd*)bcmd;
+  }
+
+
   return cmd;
 }
 
