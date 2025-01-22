@@ -147,6 +147,8 @@ UPROGS=\
 	$U/_ui\
 	$U/_mutextest\
 	$U/_ps\
+	$U/_pwd\
+	$U/_pwdtest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
