@@ -23,3 +23,8 @@
 #define SYS_freemem  22
 #define SYS_lseek  23
 #define SYS_chmod 24
+#define SYS_mutex_create  25
+#define SYS_mutex_lock    26
+#define SYS_mutex_unlock  27
+#define SYS_mutex_free    28
+#define SYS_getprocs    29

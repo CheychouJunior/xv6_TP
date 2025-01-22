@@ -39,3 +39,8 @@ entry("uptime");
 entry("freemem");
 entry("lseek");
 entry("chmod");
+entry("mutex_create");
+entry("mutex_lock");
+entry("mutex_unlock");
+entry("mutex_free");
+entry("getprocs");

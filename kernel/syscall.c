@@ -104,6 +104,11 @@ extern uint64 sys_close(void);
 extern uint64 sys_freemem(void);
 extern uint64 sys_lseek(void);
 extern uint64 sys_chmod(void);
+extern uint64 sys_mutex_create(void);
+extern uint64 sys_mutex_lock(void);
+extern uint64 sys_mutex_unlock(void);
+extern uint64 sys_mutex_free(void);
+extern uint64 sys_getprocs(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -132,6 +137,11 @@ static uint64 (*syscalls[])(void) = {
 [SYS_freemem]   sys_freemem,
 [SYS_lseek]   sys_lseek,
 [SYS_chmod]   sys_chmod,
+[SYS_mutex_create] sys_mutex_create,
+[SYS_mutex_lock]   sys_mutex_lock,
+[SYS_mutex_unlock] sys_mutex_unlock,
+[SYS_mutex_free]   sys_mutex_free,
+[SYS_getprocs]   sys_getprocs,
 };
 
 void

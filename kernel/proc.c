@@ -693,3 +693,35 @@ procdump(void)
     printf("\n");
   }
 }
+
+int
+sys_getprocs(void)
+{
+  uint64 info_addr; // Address where user wants us to write the process info
+  argaddr(0, &info_addr); 
+    
+  struct proc *p;
+  int count = 0;
+  
+  // Create a local buffer to store process info
+  struct proc_info info[NPROC];
+  
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->state != UNUSED) {
+      info[count].pid = p->pid;
+      info[count].state = p->state;
+      safestrcpy(info[count].name, p->name, sizeof(info[count].name));
+      count++;
+    }
+    release(&p->lock);
+  }
+  
+  // Copy the collected info to user space
+  if(count > 0 && copyout(myproc()->pagetable, info_addr, (char*)info, 
+                         sizeof(struct proc_info) * count) < 0) {
+    return -1;
+  }
+  
+  return count;
+}
