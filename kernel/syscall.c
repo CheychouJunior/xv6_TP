@@ -108,6 +108,7 @@ extern uint64 sys_mutex_create(void);
 extern uint64 sys_mutex_lock(void);
 extern uint64 sys_mutex_unlock(void);
 extern uint64 sys_mutex_free(void);
+extern uint64 sys_getprocs(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -140,6 +141,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_mutex_lock]   sys_mutex_lock,
 [SYS_mutex_unlock] sys_mutex_unlock,
 [SYS_mutex_free]   sys_mutex_free,
+[SYS_getprocs]   sys_getprocs,
 };
 
 void
