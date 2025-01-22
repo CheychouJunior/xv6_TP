@@ -147,6 +147,7 @@ UPROGS=\
 	$U/_ui\
 	$U/_mutextest\
 	$U/_ps\
+	$U/_clear\
 	$U/_pwd\
 	$U/_pwdtest\
 
