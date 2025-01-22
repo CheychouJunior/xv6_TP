@@ -9,6 +9,8 @@
 #define MAXCONTENT 1024
 #define HISTORY_SIZE 10
 #define TRASH_PATH "/.trash"
+#define CLEAR_SCREEN "\033[2J"    // Code ANSI pour effacer l'écran
+#define CURSOR_HOME "\033[H"      // Code ANSI pour replacer le curseur en haut à gauche
 
 char back_history[HISTORY_SIZE][MAXPATH];
 char forward_history[HISTORY_SIZE][MAXPATH];
@@ -47,7 +49,8 @@ struct archive_header {
 
 // Fonctions utilitaires
 void clear_screen() {
-    printf("\n\n\n\n");
+    write(1, CLEAR_SCREEN, sizeof(CLEAR_SCREEN) - 1);
+    write(1, CURSOR_HOME, sizeof(CURSOR_HOME) - 1);
 }
 
 void append_path(char *dest, char *src) {
@@ -397,59 +400,101 @@ void list_files() {
 }
 
 void create_file() {
-    char name[MAXLEN];
-    char content[MAXCONTENT];
-    char line[MAXLEN];
+    char buf[512];
+    char filename[32];
+    char temp[2];
+    int i = 0;
     int fd;
+    int line_start = 0;
+    
+    // Demander le nom du fichier
+    printf("Nom du fichier a creer: ");
+    while(i < sizeof(filename) - 1) {
+        if(read(0, &filename[i], 1) != 1)
+            break;
+        if(filename[i] == '\n') {
+            filename[i] = 0;
+            break;
+        }
+        i++;
+    }
 
-    printf("Nom du fichier à créer: ");
-    gets(name, MAXLEN);
-
-    fd = open(name, O_CREATE | O_WRONLY);
-    if (fd < 0) {
-        printf("Impossible de créer le fichier\n");
+    // Ouvrir le fichier
+    fd = open(filename, O_CREATE | O_WRONLY);
+    if(fd < 0) {
+        printf("Erreur: impossible de creer le fichier\n");
         return;
     }
 
-    printf("Entrez le contenu du fichier (Ctrl+Q pour quitter, ligne vide pour terminer):\n");
-    content[0] = 0;
-
-    while (1) {
-        int index = 0;
+    printf("Entrez le contenu du fichier (ligne vide pour terminer):\n");
+    
+    i = 0;
+    while(1) {
         printf("> ");
-        while (1) {
-            char c;
-            int n = read(0, &c, 1); // Lire un caractère depuis stdin
-            if (n <= 0) { // Erreur ou fin de flux
-                printf("\nErreur de lecture\n");
-                close(fd);
-                return;
-            }
-            if (c == 17) { // Ctrl+Q (ASCII 17)
-                printf("\nSortie sans terminer.\n");
-                close(fd);
-                unlink(name); // Supprimer le fichier si incomplet
-                return;
-            }
-            if (c == '\n') { // Fin de la ligne
-                line[index] = 0;
+        line_start = i;  // Mémoriser le début de la ligne
+        
+        // Lire la ligne
+        while(i < sizeof(buf) - 1) {
+            if(read(0, &temp[0], 1) != 1)
+                break;
+                
+            if(temp[0] == '\n') {
+                buf[i] = temp[0];
+                i++;
+                // Si la ligne est vide (rien entre le prompt et \n)
+                if(i == line_start + 1) {
+                    i = line_start;  // Ne pas inclure la ligne vide
+                    goto end_input;
+                }
                 break;
             }
-            if (index < MAXLEN - 1) {
-                line[index++] = c;
-            }
+            
+            buf[i] = temp[0];
+            i++;
         }
-
-        if (line[0] == 0) break; // Ligne vide : terminer
-        append_path(content, line);
-        append_path(content, "\n");
     }
 
-    write(fd, content, strlen(content));
+end_input:
+    buf[i] = 0;  // Terminer le buffer
+    
+    printf("Voulez-vous sauvegarder le fichier ? (o/n): ");
+    read(0, temp, 1);
+    read(0, &temp[1], 1);  // Lire le \n
+    
+    if(temp[0] == 'o' || temp[0] == 'O') {
+        write(fd, buf, strlen(buf));
+        printf("Fichier sauvegarde avec succes!\n");
+    } else {
+        printf("Operation annulee\n");
+    }
+    
     close(fd);
-    printf("Fichier créé avec succès\n");
 }
 
+void create_directory() {
+    char dirname[32];  // Taille raisonnable pour un nom de répertoire
+    int i = 0;
+    
+    // Demander le nom du répertoire
+    printf("Nom du repertoire a creer: ");
+    while(i < sizeof(dirname) - 1) {
+        if(read(0, &dirname[i], 1) != 1)
+            break;
+        if(dirname[i] == '\n') {
+            dirname[i] = 0;
+            break;
+        }
+        i++;
+    }
+
+    // Créer le répertoire
+    if(mkdir(dirname) < 0) {
+        printf("Erreur: impossible de creer le repertoire\n");
+        return;
+    }
+
+    printf("Repertoire '%s' cree avec succes!\n", dirname);
+}
 
 
 void undo_last_action() {
@@ -693,6 +738,30 @@ void search_file_in_dir(char *path, char *filename) {
     close(fd);
 }
 
+
+void display_file_content() {
+    char filename[MAXLEN];
+    char buf[512];
+    int fd, n;
+    
+    printf("Nom du fichier à afficher: ");
+    gets(filename, MAXLEN);
+    
+    fd = open(filename, O_RDONLY);
+    if(fd < 0) {
+        printf("Erreur: impossible d'ouvrir le fichier\n");
+        return;
+    }
+    
+    while((n = read(fd, buf, sizeof(buf))) > 0) {
+        write(1, buf, n);  // 1 est le descripteur de fichier pour stdout
+    }
+    
+    close(fd);
+}
+
+
+
 // Fonction principale de recherche
 void find(char *filename) {
     printf("Recherche de '%s'...\n", filename);
@@ -700,63 +769,123 @@ void find(char *filename) {
 }
 
 
+
+
+
+void print_welcome_message() {
+    printf("\033[1;36m************************************************************\n");
+    printf("*                                                          *\n");
+    printf("*   🚀✨ BIENVENUE SUR KALI-xv6 : L'AVENIR EST ICI ✨🚀    *\n");
+    printf("*                                                          *\n");
+    printf("*   Une version révolutionnaire de xv6, pensée et conçue   *\n");
+    printf("*   par les brillants esprits de l'Université de Yaoundé I, *\n");
+    printf("*   sous la direction éclairée du Dr. Adamou Hamza          *\n");
+    printf("*             et de M. Ngouanffo Gildas.                    *\n");
+    printf("*                                                          *\n");
+    printf("*   🧠 Explorez les limites de l'innovation,               *\n");
+    printf("*   🔥 Déchaînez votre créativité,                         *\n");
+    printf("*   🌍 Et façonnez le futur dès aujourd'hui !              *\n");
+    printf("*                                                          *\n");
+    printf("*         >>> Préparez-vous à repousser les frontières <<< *\n");
+    printf("*                                                          *\n");
+    printf("************************************************************\033[0m\n\n");
+}
+
+void print_menu_header(const char* title) {
+    printf("\033[1;34m╔══════════════ %s ══════════════╗\033[0m\n", title);
+}
+
+void print_menu_footer() {
+    printf("\033[1;34m╚═══════════════════════════════════════╝\033[0m\n");
+}
+
+void print_menu_item(int number, const char* text) {
+    printf("\033[1;32m│\033[0m %d. %s\n", number, text);
+}
+
+void print_current_path() {
+    printf("\033[1;33m📂 %s\033[0m\n\n", current_path);
+}
+
 void print_main_menu() {
     clear_screen();
-    printf("=== Gestionnaire de Fichiers ===\n");
-    printf("Répertoire actuel: %s\n\n", current_path);
-    printf("1. Afficher le contenu du répertoire\n");
-    printf("2. Navigation\n");
-    printf("3. Fichiers et répertoires\n");
-    printf("4. Opérations de copie\n");
-    printf("5. Corbeille\n");
-    printf("0. Quitter\n");
+    print_current_path();
+    print_menu_header("Menu Principal");
+    print_menu_item(1, "📋 Afficher le contenu du répertoire");
+    print_menu_item(2, "🗺️  Navigation");
+    print_menu_item(3, "📁 Fichiers et répertoires");
+    print_menu_item(4, "📋 Opérations de copie");
+    print_menu_item(5, "🗑️  Corbeille");
+    print_menu_item(6, "📦 Archives");
+    print_menu_item(0, "❌ Quitter");
+    print_menu_footer();
     printf("\nChoix: ");
 }
 
-
 void print_navigation_menu() {
     clear_screen();
-    printf("=== Menu Navigation ===\n");
-    printf("1. Accéder à un répertoire\n");
-    printf("2. Retour au répertoire précédent (<-)\n");
-    printf("3. Avancer au répertoire suivant (->)\n");
-    printf("4. Retour au menu principal\n");
+    print_current_path();
+    print_menu_header("Navigation");
+    print_menu_item(1, "📂 Accéder à un répertoire");
+    print_menu_item(2, "⬅️  Retour au répertoire précédent");
+    print_menu_item(3, "➡️  Avancer au répertoire suivant");
+    print_menu_item(4, "🏠 Retour au menu principal");
+    print_menu_footer();
     printf("\nChoix: ");
 }
 
 void print_files_menu() {
     clear_screen();
-    printf("=== Menu Fichiers et Répertoires ===\n");
-    printf("1. Créer un fichier\n");
-    printf("2. Créer un répertoire\n");
-    printf("3. Renommer un fichier\n");
-    printf("4. Renommer un répertoire\n");
-    printf("5. Supprimer un fichier\n");
-    printf("6. Supprimer un répertoire\n");
-    printf("7. Rechercher un fichier\n");
-    printf("8. Retour au menu principal\n");
+    print_current_path();
+    print_menu_header("Fichiers et Répertoires");
+    print_menu_item(1, "📝 Créer un fichier");
+    print_menu_item(2, "📁 Créer un répertoire");
+    print_menu_item(3, "✏️  Renommer un fichier");
+    print_menu_item(4, "✏️  Renommer un répertoire");
+    print_menu_item(5, "🗑️  Supprimer un fichier");
+    print_menu_item(6, "🗑️  Supprimer un répertoire");
+    print_menu_item(7, "🔍 Rechercher un fichier");
+    print_menu_item(8, "🏠 Retour au menu principal");
+    print_menu_footer();
     printf("\nChoix: ");
 }
 
 void print_copy_menu() {
     clear_screen();
-    printf("=== Menu Copier/Couper/Coller ===\n");
-    printf("1. Copier un élément\n");
-    printf("2. Couper un élément\n");
-    printf("3. Coller\n");
-    printf("4. Retour au menu principal\n");
+    print_current_path();
+    print_menu_header("Copier/Couper/Coller");
+    print_menu_item(1, "📋 Copier un élément");
+    print_menu_item(2, "✂️  Couper un élément");
+    print_menu_item(3, "📌 Coller");
+    print_menu_item(4, "🏠 Retour au menu principal");
+    print_menu_footer();
     printf("\nChoix: ");
 }
 
 void print_trash_menu() {
     clear_screen();
-    printf("=== Menu Corbeille ===\n");
-    printf("1. Vider la corbeille\n");
-    printf("2. Retour au menu principal\n");
+    print_current_path();
+    print_menu_header("Corbeille");
+    print_menu_item(1, "📋 Lister le contenu");
+    print_menu_item(2, "♻️  Restaurer un fichier");
+    print_menu_item(3, "🗑️  Vider la corbeille");
+    print_menu_item(4, "🏠 Retour au menu principal");
+    print_menu_footer();
     printf("\nChoix: ");
 }
 
-// Modification du main
+void print_archive_menu() {
+    clear_screen();
+    print_current_path();
+    print_menu_header("Archives");
+    print_menu_item(1, "📦 Créer une archive");
+    print_menu_item(2, "📂 Extraire une archive");
+    print_menu_item(3, "🏠 Retour au menu principal");
+    print_menu_footer();
+    printf("\nChoix: ");
+}
+
+// Modification du main pour inclure les nouveaux menus
 int main() {
     char choice[MAXLEN];
     char name[MAXLEN];
@@ -764,6 +893,9 @@ int main() {
     char filename[MAXLEN];
     
     strcpy(current_path, "/");
+    print_welcome_message();
+    printf("Appuyez sur Entrée pour continuer...");
+    gets(name, MAXLEN);
     
     while(1) {
         print_main_menu();
@@ -865,8 +997,11 @@ int main() {
                         find(filename);
                     }
                     else if(choice[0] == '8') {
-                        break;
-                    }
+            		display_file_content();
+        		}
+        	    else if(choice[0] == '9') {  // Modifié de 8 à 9
+            		break;
+        		}
                     printf("\nAppuyez sur Entrée pour continuer...");
                     gets(name, MAXLEN);
                 }
@@ -893,16 +1028,48 @@ int main() {
                     gets(name, MAXLEN);
                 }
                 break;
-                
             case '5': // Menu Corbeille
+    while(1) {
+        print_trash_menu();
+        gets(choice, MAXLEN);
+        
+        if(choice[0] == '1') {
+            clear_screen();
+            list_files();
+            printf("\nAppuyez sur Entrée pour continuer...");
+            gets(name, MAXLEN);
+        }
+        else if(choice[0] == '2') {
+            printf("Nom du fichier à restaurer: ");
+            gets(name, MAXLEN);
+        }
+        else if(choice[0] == '3') {
+            empty_trash();
+        }
+        else if(choice[0] == '4') {
+            break;
+        }
+        printf("\nAppuyez sur Entrée pour continuer...");
+        gets(name, MAXLEN);
+    }
+    break;
+            
+            case '6': // Menu Archives
                 while(1) {
-                    print_trash_menu();
+                    print_archive_menu();
                     gets(choice, MAXLEN);
                     
                     if(choice[0] == '1') {
-                        empty_trash();
+                        printf("Chemin à archiver: ");
+                        gets(name, MAXLEN);
+                        create_archive(name);
                     }
                     else if(choice[0] == '2') {
+                        printf("Nom de l'archive à extraire: ");
+                        gets(name, MAXLEN);
+                        extract_archive(name);
+                    }
+                    else if(choice[0] == '3') {
                         break;
                     }
                     printf("\nAppuyez sur Entrée pour continuer...");
@@ -914,7 +1081,7 @@ int main() {
                 exit(0);
                 
             default:
-                printf("Option invalide\n");
+                printf("\033[1;31mOption invalide!\033[0m\n");
                 printf("\nAppuyez sur Entrée pour continuer...");
                 gets(name, MAXLEN);
                 break;
