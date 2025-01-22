@@ -147,6 +147,7 @@ UPROGS=\
 	$U/_ui\
 	$U/_mutextest\
 	$U/_ps\
+	$U/_clear\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
