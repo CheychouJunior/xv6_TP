@@ -178,7 +178,6 @@ void rename_directory(char *oldname, char *newname) {
 
 
 
-
 // Fonctions de gestion de la corbeille
 void init_trash() {
     mkdir(TRASH_PATH);
@@ -399,7 +398,73 @@ void list_files() {
     close(fd);
 }
 
+
 void create_file() {
+    char name[MAXLEN];
+    char content[MAXCONTENT];
+    char line[MAXLEN];
+    int fd;
+
+    printf("Nom du fichier à créer: ");
+    gets(name, MAXLEN);
+
+    fd = open(name, O_CREATE | O_WRONLY);
+    if (fd < 0) {
+        printf("Impossible de créer le fichier\n");
+        return;
+    }
+
+    printf("Entrez le contenu du fichier (ligne vide pour terminer):\n");
+    content[0] = 0;
+
+    while (1) {
+        int index = 0;
+        printf("> ");
+        while (1) {
+            char c;
+            int n = read(0, &c, 1); // Lire un caractère depuis stdin
+            if (n <= 0) { // Erreur ou fin de flux
+                printf("\nErreur de lecture\n");
+                close(fd);
+                return;
+            }
+            if (c == 17) { // Ctrl+Q (ASCII 17)
+                printf("\nSortie sans terminer.\n");
+                close(fd);
+                unlink(name); // Supprimer le fichier si incomplet
+                return;
+            }
+            if (c == '\n') { // Fin de la ligne
+                line[index] = 0;
+                break;
+            }
+            if (index < MAXLEN - 1) {
+                line[index++] = c;
+            }
+        }
+
+        if (line[0] == 0) break; // Ligne vide : terminer
+        append_path(content, line);
+        append_path(content, "\n");
+    }
+
+    printf("Voulez-vous sauvegarder le fichier ? (o/n): ");
+    char choice;
+    read(0, &choice, 1);
+    if (choice == 'o' || choice == 'O') {
+        write(fd, content, strlen(content));
+        close(fd);
+        printf("Fichier créé avec succès\n");
+    } else {
+        close(fd);
+        unlink(name); // Supprimer le fichier si l'utilisateur ne sauvegarde pas
+        printf("Création du fichier annulée\n");
+    }
+}
+
+
+
+void create_files() {
     char buf[512];
     char filename[32];
     char temp[2];
@@ -469,31 +534,6 @@ end_input:
     }
     
     close(fd);
-}
-
-void create_directory() {
-    char dirname[32];  // Taille raisonnable pour un nom de répertoire
-    int i = 0;
-    
-    // Demander le nom du répertoire
-    printf("Nom du repertoire a creer: ");
-    while(i < sizeof(dirname) - 1) {
-        if(read(0, &dirname[i], 1) != 1)
-            break;
-        if(dirname[i] == '\n') {
-            dirname[i] = 0;
-            break;
-        }
-        i++;
-    }
-
-    // Créer le répertoire
-    if(mkdir(dirname) < 0) {
-        printf("Erreur: impossible de creer le repertoire\n");
-        return;
-    }
-
-    printf("Repertoire '%s' cree avec succes!\n", dirname);
 }
 
 
@@ -740,25 +780,36 @@ void search_file_in_dir(char *path, char *filename) {
 
 
 void display_file_content() {
-    char filename[MAXLEN];
-    char buf[512];
-    int fd, n;
-    
+    char name[MAXLEN];
+    int fd;
+    char buffer[MAXCONTENT];
+    int n;
+
+    // Demander le nom du fichier à afficher
     printf("Nom du fichier à afficher: ");
-    gets(filename, MAXLEN);
-    
-    fd = open(filename, O_RDONLY);
-    if(fd < 0) {
-        printf("Erreur: impossible d'ouvrir le fichier\n");
+    gets(name, MAXLEN);
+
+    // Ouvrir le fichier en lecture
+    fd = open(name, O_RDONLY);
+    if (fd < 0) {
+        printf("Impossible d'ouvrir le fichier %s\n", name);
         return;
     }
-    
-    while((n = read(fd, buf, sizeof(buf))) > 0) {
-        write(1, buf, n);  // 1 est le descripteur de fichier pour stdout
+
+    // Lire et afficher le contenu du fichier
+    printf("Contenu du fichier %s:\n", name);
+    while ((n = read(fd, buffer, sizeof(buffer))) > 0) {
+        write(1, buffer, n);  // Afficher le contenu à la sortie standard
     }
-    
+
+    if (n < 0) {
+        printf("Erreur de lecture du fichier %s\n", name);
+    }
+
+    // Fermer le fichier après lecture
     close(fd);
 }
+
 
 
 
@@ -847,6 +898,7 @@ void print_files_menu() {
     print_menu_item(7, "🔍 Rechercher un fichier");
     print_menu_item(8, "🗺️ Afficher le contenu d'un fichier");
     print_menu_item(9, "🏠 Retour au menu principal");
+    print_menu_item(0, "📝 Créer un fichier accessible via le terminal uniquement");
     print_menu_footer();
     printf("\nChoix: ");
 }
@@ -953,7 +1005,10 @@ int main() {
                     print_files_menu();
                     gets(choice, MAXLEN);
                     
-                    if(choice[0] == '1') {
+                    if(choice[0] == '0') {
+                        create_files();
+                    }
+                    else if(choice[0] == '1') {
                         create_file();
                     }
                     else if(choice[0] == '2') {
